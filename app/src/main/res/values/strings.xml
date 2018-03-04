@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+
+    <string name="popular">Popular</string>
+    <string name="topRated">Top Rated</string>
+
+    <string name="errorMessage">Unable to retrieve data</string>
+
+    <string name="outStateMovieParcelableKey">movies</string>
+    <string name="intentExtraParcelableKey">Movie</string>
+
+    <string name="movieTitle">Movie Title:</string>
+    <string name="movieReleaseDate">Movie Release Date:</string>
+    <string name="movieVoteAverage">Movie Vote Average:</string>
+    <string name="movieSynopsis">Movie Synopsis:</string>
+
+</resources>
