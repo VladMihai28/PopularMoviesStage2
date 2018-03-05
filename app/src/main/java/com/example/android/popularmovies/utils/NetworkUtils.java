@@ -2,6 +2,8 @@ package com.example.android.popularmovies.utils;
 
 import android.net.Uri;
 
+import com.example.android.popularmovies.BuildConfig;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -24,7 +26,7 @@ public class NetworkUtils {
     final static String PARAM_TOP_RATED = "movie/top_rated";
 
     final static String API_KEY = "api_key";
-    final static String API_KEY_VALUE = "Input your Key here";
+    final static String API_KEY_VALUE = BuildConfig.MOVIE_DB_API_KEY;
 
     final static String SCANNER_DELIMITER = "\\A";
 
