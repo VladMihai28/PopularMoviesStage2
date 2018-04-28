@@ -2,6 +2,7 @@ package com.example.android.popularmovies;
 
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.android.popularmovies.Model.Movie;
+import com.example.android.popularmovies.Model.Review;
 import com.example.android.popularmovies.Model.Trailer;
 import com.example.android.popularmovies.utils.JsonUtils;
 import com.example.android.popularmovies.utils.NetworkUtils;
@@ -72,12 +74,17 @@ public class MovieDetailActivity extends AppCompatActivity{
 
         URL movieTrailersQuery = NetworkUtils.buildUrlForMovieTrailers(currentMovie.getId());
         loadMovieTrailers(movieTrailersQuery);
+        URL movieReviewsQuery = NetworkUtils.buildUrlForMovieReviews(currentMovie.getId());
+        loadMovieReviews(movieReviewsQuery);
     }
 
     private void loadMovieTrailers(URL apiCallURL){
         new TrailerDBQueryTask().execute(apiCallURL);
     }
 
+    private void loadMovieReviews(URL apiCallURL){
+        new ReviewDBQueryTask().execute(apiCallURL);
+    }
     /**
      * Async task used to fetch trailer data from the Popular Movies DB
      */
@@ -116,12 +123,12 @@ public class MovieDetailActivity extends AppCompatActivity{
     }
 
     private void createTrailerButtons(List<Trailer> movieTrailerListResult){
-        LinearLayout layout = (LinearLayout) findViewById(R.id.ll_trailers);
-        layout.setGravity(Gravity.CENTER);
+        LinearLayout layout = findViewById(R.id.ll_trailers);
+        int index = 1;
         for (final Trailer trailer: movieTrailerListResult) {
             Button button = new Button(this);
             button.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            button.setText("Play Trailer " + trailer.getName());
+            button.setText("Play Trailer " + Integer.toString(index));
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -129,6 +136,7 @@ public class MovieDetailActivity extends AppCompatActivity{
                 }
             });
             layout.addView(button);
+            index++;
         }
     }
 
@@ -140,4 +148,66 @@ public class MovieDetailActivity extends AppCompatActivity{
         }
 
     }
+
+
+    /**
+     * Async task used to fetch trailer data from the Popular Movies DB
+     */
+    public class ReviewDBQueryTask extends AsyncTask<URL, Void, List<Review>> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected List<Review> doInBackground(URL... urls) {
+
+            URL targetUrl = urls[0];
+
+            List<Review> movieReviewsListResult;
+
+            try {
+                String movieReviewsDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
+                movieReviewsListResult = JsonUtils.parseMovieReviewDBJson(movieReviewsDBResult);
+
+            } catch (IOException | JSONException e) {
+                return null;
+            }
+
+            return movieReviewsListResult;
+        }
+
+        @Override
+        protected void onPostExecute(List<Review> movieReviewListResult) {
+
+            if (movieReviewListResult != null){
+                createReviewTextBoxes(movieReviewListResult);
+            }
+        }
+    }
+
+    private void createReviewTextBoxes(List<Review> movieReviewListResult){
+        LinearLayout layout = findViewById(R.id.ll_reviews);
+        boolean passedFirstReview = false;
+        for (Review review: movieReviewListResult) {
+            if (passedFirstReview) {
+                View viewDivider = new View(this);
+                int dividerHeight = (int) getResources().getDisplayMetrics().density * 1;
+                viewDivider.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dividerHeight));
+                viewDivider.setBackgroundColor(Color.parseColor("#000000"));
+                layout.addView(viewDivider);
+            }
+
+            TextView reviewContent = new TextView(this);
+            reviewContent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            reviewContent.setText(review.getContent());
+            reviewContent.setPadding(0,16,0,16);
+            layout.addView(reviewContent);
+            passedFirstReview = true;
+
+        }
+
+    }
+
 }

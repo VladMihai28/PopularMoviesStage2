@@ -28,6 +28,7 @@ public class NetworkUtils {
     final static String PARAM_TOP_RATED = "movie/top_rated";
 
     final static String PARAM_TRAILERS = "videos";
+    final static String PARAM_REVIEWS = "reviews";
     final static String PARAM_MOVIE = "movie";
 
     final static String API_KEY = "api_key";
@@ -83,6 +84,26 @@ public class NetworkUtils {
     public static URL buildUrlForMovieTrailers(String id){
         URL url = null;
         Uri builtUri = Uri.parse(POPULAR_MOVIES_BASE_URL + PARAM_MOVIE + "/" + id + "/" + PARAM_TRAILERS).buildUpon()
+                .appendQueryParameter(API_KEY, API_KEY_VALUE)
+                .build();
+        try {
+            url = new URL(builtUri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return url;
+
+    }
+
+    /**
+     * Build URL for requesting review information
+     * @param id the id of the movie we are requesting reviews for
+     * @return the URL to use to query for reviews
+     */
+    public static URL buildUrlForMovieReviews(String id){
+        URL url = null;
+        Uri builtUri = Uri.parse(POPULAR_MOVIES_BASE_URL + PARAM_MOVIE + "/" + id + "/" + PARAM_REVIEWS).buildUpon()
                 .appendQueryParameter(API_KEY, API_KEY_VALUE)
                 .build();
         try {

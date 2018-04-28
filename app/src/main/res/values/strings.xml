@@ -9,9 +9,12 @@
     <string name="outStateMovieParcelableKey">movies</string>
     <string name="intentExtraParcelableKey">Movie</string>
 
-    <string name="movieTitle">Movie Title:</string>
-    <string name="movieReleaseDate">Movie Release Date:</string>
-    <string name="movieVoteAverage">Movie Vote Average:</string>
-    <string name="movieSynopsis">Movie Synopsis:</string>
+    <string name="movieTitle">Title:</string>
+    <string name="movieReleaseDate">Release Date:</string>
+    <string name="movieVoteAverage">Vote Average:</string>
+    <string name="movieSynopsis">Synopsis:</string>
+
+    <string name="movieTrailers">Trailers:</string>
+    <string name="movieReviews">Reviews:</string>
 
 </resources>

@@ -1,6 +1,7 @@
 package com.example.android.popularmovies.utils;
 
 import com.example.android.popularmovies.Model.Movie;
+import com.example.android.popularmovies.Model.Review;
 import com.example.android.popularmovies.Model.Trailer;
 
 import org.json.JSONArray;
@@ -113,4 +114,44 @@ public class JsonUtils {
         }
         return movieTrailerList;
     }
+
+
+    public static List<Review> parseMovieReviewDBJson(String json) throws JSONException {
+
+        /* The name of the relevant fields from the JSON */
+        final String AUTHOR = "author";
+        final String CONTENT = "content";
+        final String URL = "url";
+        final String RESULTS = "results";
+
+        JSONObject movieReviewPageJson = new JSONObject(json);
+
+        List<Review> movieReviewList = new ArrayList<>();
+
+        if (movieReviewPageJson.has(RESULTS)) {
+            JSONArray movieReviewsInJson = movieReviewPageJson.getJSONArray(RESULTS);
+            for (int i = 0; i < movieReviewsInJson.length(); i++) {
+
+                JSONObject currentMovieReviewJson = movieReviewsInJson.getJSONObject(i);
+                Review currenReview = new Review();
+
+                if (currentMovieReviewJson.has(AUTHOR)) {
+                    currenReview.setAuthor(currentMovieReviewJson.getString(AUTHOR));
+                }
+                if (currentMovieReviewJson.has(CONTENT)) {
+                    currenReview.setContent(currentMovieReviewJson.getString(CONTENT));
+                }
+                if (currentMovieReviewJson.has(URL)) {
+                    currenReview.setUrl(currentMovieReviewJson.getString(URL));
+                }
+
+                if (!currenReview.getContent().isEmpty() && !currenReview.getAuthor().isEmpty()){
+                    movieReviewList.add(currenReview);
+                }
+            }
+
+        }
+        return movieReviewList;
+    }
+
 }

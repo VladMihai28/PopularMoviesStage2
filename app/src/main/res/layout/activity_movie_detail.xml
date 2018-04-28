@@ -43,21 +43,63 @@
         app:layout_constraintStart_toStartOf="@+id/tv_detail_release_date"
         app:layout_constraintTop_toBottomOf="@+id/tv_detail_release_date"/>
 
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        style="@style/DetailMovieInfo"
+        android:id="@+id/tv_synopsis_label"
+        android:text="@string/movieSynopsis"
+        app:layout_constraintStart_toStartOf="@+id/imageview_detail_movie_poster"
+        app:layout_constraintTop_toBottomOf="@+id/imageview_detail_movie_poster"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:id="@+id/tv_detail_plot_synopsis"
-        app:layout_constraintStart_toStartOf="@+id/imageview_detail_movie_poster"
-        app:layout_constraintTop_toBottomOf="@+id/imageview_detail_movie_poster"/>
+        app:layout_constraintStart_toStartOf="@+id/tv_synopsis_label"
+        app:layout_constraintTop_toBottomOf="@+id/tv_synopsis_label"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:id="@+id/tv_trailer_label"
+        style="@style/DetailMovieInfo"
+        android:text="@string/movieTrailers"
+        app:layout_constraintStart_toStartOf="@+id/tv_detail_plot_synopsis"
+        app:layout_constraintTop_toBottomOf="@+id/tv_detail_plot_synopsis"/>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:id="@+id/ll_trailers"
-        app:layout_constraintStart_toStartOf="@+id/tv_detail_plot_synopsis"
-        app:layout_constraintTop_toBottomOf="@+id/tv_detail_plot_synopsis">
+        app:layout_constraintStart_toStartOf="@+id/tv_trailer_label"
+        app:layout_constraintTop_toBottomOf="@+id/tv_trailer_label">
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:id="@+id/tv_review_label"
+        style="@style/DetailMovieInfo"
+        android:text="@string/movieReviews"
+        app:layout_constraintStart_toStartOf="@+id/ll_trailers"
+        app:layout_constraintTop_toBottomOf="@+id/ll_trailers"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/ll_reviews"
+        android:showDividers="middle"
+        app:layout_constraintStart_toStartOf="@+id/tv_review_label"
+        app:layout_constraintTop_toBottomOf="@+id/tv_review_label">
 
     </LinearLayout>
 
