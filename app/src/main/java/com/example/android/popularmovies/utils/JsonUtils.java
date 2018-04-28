@@ -1,6 +1,7 @@
 package com.example.android.popularmovies.utils;
 
 import com.example.android.popularmovies.Model.Movie;
+import com.example.android.popularmovies.Model.Trailer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,6 +25,7 @@ public class JsonUtils {
         final String POSTER_PATH = "poster_path";
         final String OVERVIEW = "overview";
         final String RELEASE_DATE = "release_date";
+        final String ID = "id";
 
         final String BASE_POSTER_PATH = "http://image.tmdb.org/t/p/w185";
 
@@ -42,6 +44,10 @@ public class JsonUtils {
 
                 if (currentMovieJson.has(VOTE_AVERAGE)) {
                     currentMovie.setVoteAverage(Float.parseFloat(currentMovieJson.getString(VOTE_AVERAGE)));
+                }
+
+                if (currentMovieJson.has(ID)) {
+                    currentMovie.setId(currentMovieJson.getString(ID));
                 }
                 if (currentMovieJson.has(TITLE)) {
                     currentMovie.setTitle(currentMovieJson.getString(TITLE));
@@ -64,5 +70,47 @@ public class JsonUtils {
             }
         }
         return movieList;
+    }
+
+    public static List<Trailer> parseMovieTrailerDBJson(String json) throws JSONException {
+
+        /* The name of the relevant fields from the JSON */
+        final String NAME = "name";
+        final String TYPE = "type";
+        final String SITE = "site";
+        final String KEY = "key";
+        final String RESULTS = "results";
+
+        JSONObject movieTrailerPageJson = new JSONObject(json);
+
+        List<Trailer> movieTrailerList = new ArrayList<>();
+
+        if (movieTrailerPageJson.has(RESULTS)) {
+            JSONArray movieTrailersInJson = movieTrailerPageJson.getJSONArray(RESULTS);
+            for (int i = 0; i < movieTrailersInJson.length(); i++) {
+
+                JSONObject currentMovieTrailerJson = movieTrailersInJson.getJSONObject(i);
+                Trailer currenTrailer = new Trailer();
+
+                if (currentMovieTrailerJson.has(NAME)) {
+                    currenTrailer.setName(currentMovieTrailerJson.getString(NAME));
+                }
+                if (currentMovieTrailerJson.has(TYPE)) {
+                    currenTrailer.setType(currentMovieTrailerJson.getString(TYPE));
+                }
+                if (currentMovieTrailerJson.has(SITE)) {
+                    currenTrailer.setSite(currentMovieTrailerJson.getString(SITE));
+                }
+                if (currentMovieTrailerJson.has(KEY)) {
+                    currenTrailer.setKey(currentMovieTrailerJson.getString(KEY));
+                }
+
+                if (!currenTrailer.getKey().isEmpty() && !currenTrailer.getSite().isEmpty()){
+                    movieTrailerList.add(currenTrailer);
+                }
+            }
+
+        }
+        return movieTrailerList;
     }
 }

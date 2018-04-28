@@ -17,6 +17,7 @@ public class Movie implements Parcelable {
     private String posterPath;
     private String overview;
     private String releaseDate;
+    private String id;
 
     public Movie(){}
 
@@ -27,6 +28,7 @@ public class Movie implements Parcelable {
         posterPath = parcel.readString();
         voteAverage = parcel.readFloat();
         overview = parcel.readString();
+        id = parcel.readString();
     }
 
     public float getVoteAverage() {
@@ -69,6 +71,14 @@ public class Movie implements Parcelable {
         this.releaseDate = releaseDate;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -82,6 +92,7 @@ public class Movie implements Parcelable {
         parcel.writeString(posterPath);
         parcel.writeFloat(voteAverage);
         parcel.writeString(overview);
+        parcel.writeString(id);
 
     }
 

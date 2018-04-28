@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     }
 
     /**
-     * Async task used to fetch data from the Popular Movies DB
+     * Async task used to fetch movie data from the Popular Movies DB
      */
     public class MovieDBQUeryTask extends AsyncTask<URL, Void, List<Movie>>{
 

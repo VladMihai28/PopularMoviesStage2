@@ -6,6 +6,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:id="@+id/detail_constraint_layout"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
 
@@ -49,6 +50,16 @@
         android:id="@+id/tv_detail_plot_synopsis"
         app:layout_constraintStart_toStartOf="@+id/imageview_detail_movie_poster"
         app:layout_constraintTop_toBottomOf="@+id/imageview_detail_movie_poster"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/ll_trailers"
+        app:layout_constraintStart_toStartOf="@+id/tv_detail_plot_synopsis"
+        app:layout_constraintTop_toBottomOf="@+id/tv_detail_plot_synopsis">
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
 </ScrollView>

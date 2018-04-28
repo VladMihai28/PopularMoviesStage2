@@ -21,9 +21,14 @@ public class NetworkUtils {
     final static String POPULAR_MOVIES_BASE_URL =
             "https://api.themoviedb.org/3/";
 
+    final static String YOUTUBE_BASE_URL = "https://youtu.be/";
+
     final static String PARAM_POPULAR = "movie/popular";
 
     final static String PARAM_TOP_RATED = "movie/top_rated";
+
+    final static String PARAM_TRAILERS = "videos";
+    final static String PARAM_MOVIE = "movie";
 
     final static String API_KEY = "api_key";
     final static String API_KEY_VALUE = BuildConfig.MOVIE_DB_API_KEY;
@@ -68,6 +73,37 @@ public class NetworkUtils {
             }
         }
         return url;
+    }
+
+    /**
+     * Build URL for requesting trailer information
+     * @param id the id of the movie we are requesting trailers for
+     * @return the URL to use to query for trailers
+     */
+    public static URL buildUrlForMovieTrailers(String id){
+        URL url = null;
+        Uri builtUri = Uri.parse(POPULAR_MOVIES_BASE_URL + PARAM_MOVIE + "/" + id + "/" + PARAM_TRAILERS).buildUpon()
+                .appendQueryParameter(API_KEY, API_KEY_VALUE)
+                .build();
+        try {
+            url = new URL(builtUri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return url;
+
+    }
+
+    /**
+     * Create a Youtube URI based on the key of the video
+     * @param key the key of the video
+     * @return the URI to Youtube
+     */
+    public static Uri buildTrailerUri(String key){
+
+        return Uri.parse(YOUTUBE_BASE_URL + key).buildUpon().build();
+
     }
 
     /**
