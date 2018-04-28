@@ -7,6 +7,9 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -33,7 +36,8 @@ import java.util.List;
  * Activity used for displaying movie details
  */
 
-public class MovieDetailActivity extends AppCompatActivity{
+public class MovieDetailActivity extends AppCompatActivity
+        {
 
     private ImageView moviePoster;
     private TextView movieTitleTextView;
@@ -41,6 +45,10 @@ public class MovieDetailActivity extends AppCompatActivity{
     private TextView movieVoteAverageTextView;
     private TextView movieSynopsisTextView;
 
+
+    private static final int ID_MOVIE_TRAILERS_LOADER = 81;
+    private static final int ID_MOVIE_REVIEWS_LOADER = 82;
+    private static final String MOVIE_ID_KEY = "movieID";
     private String movieID;
 
     @Override
@@ -77,55 +85,128 @@ public class MovieDetailActivity extends AppCompatActivity{
             movieID = currentMovie.getId();
         }
 
-        URL movieTrailersQuery = NetworkUtils.buildUrlForMovieTrailers(movieID);
-        loadMovieTrailers(movieTrailersQuery);
-        URL movieReviewsQuery = NetworkUtils.buildUrlForMovieReviews(movieID);
-        loadMovieReviews(movieReviewsQuery);
+        Bundle bundleForLoader = new Bundle();
+        bundleForLoader.putString(MOVIE_ID_KEY, movieID);
+        getSupportLoaderManager().initLoader(ID_MOVIE_TRAILERS_LOADER, bundleForLoader, trailersLoaderCallback);
+        getSupportLoaderManager().initLoader(ID_MOVIE_REVIEWS_LOADER, bundleForLoader, reviewsLoaderCallback);
+
     }
 
-    private void loadMovieTrailers(URL apiCallURL){
-        new TrailerDBQueryTask().execute(apiCallURL);
-    }
-
-    private void loadMovieReviews(URL apiCallURL){
-        new ReviewDBQueryTask().execute(apiCallURL);
-    }
-    /**
-     * Async task used to fetch trailer data from the Popular Movies DB
-     */
-    public class TrailerDBQueryTask extends AsyncTask<URL, Void, List<Trailer>> {
+    private LoaderManager.LoaderCallbacks<List<Trailer>> trailersLoaderCallback = new LoaderManager.LoaderCallbacks<List<Trailer>>(){
 
         @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
+        public Loader<List<Trailer>> onCreateLoader(int id, Bundle args) {
+            return new AsyncTaskLoader<List<Trailer>>(MovieDetailActivity.this) {
+                List<Trailer> movieTrailers = null;
+
+                @Override
+                protected void onStartLoading() {
+                    if (movieTrailers != null) {
+                        deliverResult(movieTrailers);
+                    }
+                    else {
+                        forceLoad();
+                    }
+                }
+
+                @Override
+                public List<Trailer> loadInBackground() {
+
+                    URL targetUrl = NetworkUtils.buildUrlForMovieTrailers(movieID);
+
+                    List<Trailer> movieTrailerListResult;
+
+                    try {
+                        String movieTrailerDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
+                        movieTrailerListResult = JsonUtils.parseMovieTrailerDBJson(movieTrailerDBResult);
+
+                    } catch (IOException | JSONException e) {
+                        return null;
+                    }
+
+                    return movieTrailerListResult;
+                }
+
+                public void deliverResult(List<Trailer> data) {
+                    movieTrailers = data;
+                    super.deliverResult(movieTrailers);
+                }
+
+            };
+
         }
 
         @Override
-        protected List<Trailer> doInBackground(URL... urls) {
-
-            URL targetUrl = urls[0];
-
-            List<Trailer> movieTrailerListResult;
-
-            try {
-                String movieTrailerDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
-                movieTrailerListResult = JsonUtils.parseMovieTrailerDBJson(movieTrailerDBResult);
-
-            } catch (IOException | JSONException e) {
-                return null;
+        public void onLoadFinished(Loader<List<Trailer>> loader, List<Trailer> data) {
+            if (data != null){
+                createTrailerButtons(data);
             }
-
-            return movieTrailerListResult;
         }
 
         @Override
-        protected void onPostExecute(List<Trailer> movieTrailerListResult) {
+        public void onLoaderReset(Loader<List<Trailer>> loader) {
 
-            if (movieTrailerListResult != null){
-                createTrailerButtons(movieTrailerListResult);
+        }
+    };
+
+
+    private LoaderManager.LoaderCallbacks<List<Review>> reviewsLoaderCallback = new LoaderManager.LoaderCallbacks<List<Review>>(){
+
+        @Override
+        public Loader<List<Review>> onCreateLoader(int id, Bundle args) {
+            return new AsyncTaskLoader<List<Review>>(MovieDetailActivity.this) {
+                List<Review> movieReviews = null;
+
+                @Override
+                protected void onStartLoading() {
+                    if (movieReviews != null) {
+                        deliverResult(movieReviews);
+                    }
+                    else {
+                        forceLoad();
+                    }
+                }
+
+                @Override
+                public List<Review> loadInBackground() {
+
+                    URL targetUrl = NetworkUtils.buildUrlForMovieReviews(movieID);
+
+                    List<Review> movieReviewsListResult;
+
+                    try {
+                        String movieReviewsDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
+                        movieReviewsListResult = JsonUtils.parseMovieReviewDBJson(movieReviewsDBResult);
+
+                    } catch (IOException | JSONException e) {
+                        return null;
+                    }
+
+                    return movieReviewsListResult;
+                }
+
+                public void deliverResult(List<Review> data) {
+                    movieReviews = data;
+                    super.deliverResult(movieReviews);
+                }
+
+            };
+
+        }
+
+        @Override
+        public void onLoadFinished(Loader<List<Review>> loader, List<Review> movieReviewListResult) {
+            if (movieReviewListResult != null){
+                createReviewTextBoxes(movieReviewListResult);
             }
         }
-    }
+
+        @Override
+        public void onLoaderReset(Loader<List<Review>> loader) {
+
+        }
+    };
+
 
     private void createTrailerButtons(List<Trailer> movieTrailerListResult){
         LinearLayout layout = findViewById(R.id.ll_trailers);
@@ -155,42 +236,6 @@ public class MovieDetailActivity extends AppCompatActivity{
     }
 
 
-    /**
-     * Async task used to fetch trailer data from the Popular Movies DB
-     */
-    public class ReviewDBQueryTask extends AsyncTask<URL, Void, List<Review>> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected List<Review> doInBackground(URL... urls) {
-
-            URL targetUrl = urls[0];
-
-            List<Review> movieReviewsListResult;
-
-            try {
-                String movieReviewsDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
-                movieReviewsListResult = JsonUtils.parseMovieReviewDBJson(movieReviewsDBResult);
-
-            } catch (IOException | JSONException e) {
-                return null;
-            }
-
-            return movieReviewsListResult;
-        }
-
-        @Override
-        protected void onPostExecute(List<Review> movieReviewListResult) {
-
-            if (movieReviewListResult != null){
-                createReviewTextBoxes(movieReviewListResult);
-            }
-        }
-    }
 
     private void createReviewTextBoxes(List<Review> movieReviewListResult){
         LinearLayout layout = findViewById(R.id.ll_reviews);
