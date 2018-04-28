@@ -1,5 +1,6 @@
 package com.example.android.popularmovies;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
@@ -7,13 +8,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.example.android.popularmovies.Data.MovieContract;
 import com.example.android.popularmovies.Model.Movie;
 import com.example.android.popularmovies.Model.Review;
 import com.example.android.popularmovies.Model.Trailer;
@@ -38,6 +40,8 @@ public class MovieDetailActivity extends AppCompatActivity{
     private TextView movieReleaseDateTextView;
     private TextView movieVoteAverageTextView;
     private TextView movieSynopsisTextView;
+
+    private String movieID;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -70,11 +74,12 @@ public class MovieDetailActivity extends AppCompatActivity{
             movieReleaseDateTextView.setText(currentMovie.getReleaseDate());
             movieVoteAverageTextView.setText(String.valueOf(currentMovie.getVoteAverage()));
             movieSynopsisTextView.setText(currentMovie.getOverview());
+            movieID = currentMovie.getId();
         }
 
-        URL movieTrailersQuery = NetworkUtils.buildUrlForMovieTrailers(currentMovie.getId());
+        URL movieTrailersQuery = NetworkUtils.buildUrlForMovieTrailers(movieID);
         loadMovieTrailers(movieTrailersQuery);
-        URL movieReviewsQuery = NetworkUtils.buildUrlForMovieReviews(currentMovie.getId());
+        URL movieReviewsQuery = NetworkUtils.buildUrlForMovieReviews(movieID);
         loadMovieReviews(movieReviewsQuery);
     }
 
@@ -208,6 +213,24 @@ public class MovieDetailActivity extends AppCompatActivity{
 
         }
 
+    }
+
+    /**
+     * Favorite a movie
+     */
+    public void addToFavorites(View v){
+        addNewMovie(movieTitleTextView.getText().toString(), movieID);
+    }
+
+    private void addNewMovie(String name, String movieId) {
+
+        ContentValues cv = new ContentValues();
+        cv.put(MovieContract.MovieEntry.COLUMN_MOVIE_NAME, name);
+        cv.put(MovieContract.MovieEntry.COLUMN_MOVIE_ID, movieId);
+        Uri uri = getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, cv);
+        if(uri != null) {
+            Toast.makeText(getBaseContext(), uri.toString(), Toast.LENGTH_LONG).show();
+        }
     }
 
 }

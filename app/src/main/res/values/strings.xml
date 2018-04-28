@@ -3,6 +3,7 @@
 
     <string name="popular">Popular</string>
     <string name="topRated">Top Rated</string>
+    <string name="favorites">Favorites</string>
 
     <string name="errorMessage">Unable to retrieve data</string>
 
@@ -16,5 +17,7 @@
 
     <string name="movieTrailers">Trailers:</string>
     <string name="movieReviews">Reviews:</string>
+
+    <string name="addFavorite">Add to favorites</string>
 
 </resources>

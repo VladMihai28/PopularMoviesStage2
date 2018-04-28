@@ -2,7 +2,14 @@ package com.example.android.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -13,6 +20,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.android.popularmovies.Data.MovieContract;
+import com.example.android.popularmovies.Data.MovieDbHelper;
 import com.example.android.popularmovies.Model.Movie;
 import com.example.android.popularmovies.utils.JsonUtils;
 import com.example.android.popularmovies.utils.NetworkUtils;
@@ -20,13 +29,26 @@ import com.example.android.popularmovies.utils.NetworkUtils;
 import org.json.JSONException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler{
+public class MainActivity extends AppCompatActivity implements
+        MovieAdapter.MovieAdapterOnClickHandler,
+        LoaderManager.LoaderCallbacks<List<Movie>>{
 
     private MovieAdapter movieAdapter;
+
+    private static final int ID_FAVORITE_MOVIES_LOADER = 74;
+    LoaderManager.LoaderCallbacks<List<Movie>> callback;
+
+    public static final String[] FAVORITE_MOVIES_PROJECTION = {
+            MovieContract.MovieEntry.COLUMN_MOVIE_NAME,
+            MovieContract.MovieEntry.COLUMN_MOVIE_ID,
+    };
+
+    private final static String QUERY_URL_KEY = "uriForQuery";
 
     /* Loading indicator displayed before data is retrieved */
     private ProgressBar loadingIndicator;
@@ -39,6 +61,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
     private final int NUMBER_OF_COLUMNS_IN_GRID = 2;
 
+    private SQLiteDatabase mDb;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         errorMessageDisplay = findViewById(R.id.tv_error_message_display);
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, NUMBER_OF_COLUMNS_IN_GRID);
+
 
         recyclerView = findViewById(R.id.recyclerview_movie);
         recyclerView.setLayoutManager(layoutManager);
@@ -59,9 +84,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         /* If we return to the main activity display movies based on the sorting category last chosen
          * If not, display movies by popularity
          */
+        callback = MainActivity.this;
+
         if(savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.outStateMovieParcelableKey))) {
             URL popularMoviesQuery = NetworkUtils.buildUrlForPopularMovies();
-            loadMovieData(popularMoviesQuery);
+            Bundle bundleForLoader = new Bundle();
+            bundleForLoader.putString(QUERY_URL_KEY, popularMoviesQuery.toString());
+            getSupportLoaderManager().initLoader(ID_FAVORITE_MOVIES_LOADER, bundleForLoader, callback);
         }
         else {
             movieList = savedInstanceState.getParcelableArrayList(getString(R.string.outStateMovieParcelableKey));
@@ -87,31 +116,27 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     public boolean onOptionsItemSelected(MenuItem item) {
 
         int menuItemThatWasSelected = item.getItemId();
-        URL moviesQuery = null;
 
         /* Perform data retrieval based on the sort method selected by the user */
         switch (menuItemThatWasSelected) {
             case R.id.popular: {
-                moviesQuery = NetworkUtils.buildUrlForPopularMovies();
+                URL moviesQuery = NetworkUtils.buildUrlForPopularMovies();
+                Bundle bundleForLoader = new Bundle();
+                bundleForLoader.putString(QUERY_URL_KEY, moviesQuery.toString());
+                getSupportLoaderManager().restartLoader(ID_FAVORITE_MOVIES_LOADER, bundleForLoader, callback);
                 break;
             }
             case R.id.topRated:
-                moviesQuery = NetworkUtils.buildUrlForTopRatedMovies();
+                URL moviesQuery = NetworkUtils.buildUrlForTopRatedMovies();
+                Bundle bundleForLoader = new Bundle();
+                bundleForLoader.putString(QUERY_URL_KEY, moviesQuery.toString());
+                getSupportLoaderManager().restartLoader(ID_FAVORITE_MOVIES_LOADER, bundleForLoader, callback);
                 break;
+            case R.id.favorites:
+                getFavoriteMovies();
         }
 
-        if (null != moviesQuery) {
-            loadMovieData(moviesQuery);
-        }
         return super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * Execute the async task with the received URL
-     * @param apiCallURL the URL that should be used to retrieve information
-     */
-    private void loadMovieData(URL apiCallURL){
-        new MovieDBQUeryTask().execute(apiCallURL);
     }
 
     /**
@@ -129,49 +154,82 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         startActivity(intentToStartDetailActivity);
     }
 
-    /**
-     * Async task used to fetch movie data from the Popular Movies DB
-     */
-    public class MovieDBQUeryTask extends AsyncTask<URL, Void, List<Movie>>{
+    @Override
+    public Loader<List<Movie>> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<List<Movie>>(this) {
+            List<Movie> movieData = null;
+            URL targetUrl = null;
+            @Override
+            protected void onStartLoading() {
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            errorMessageDisplay.setVisibility(View.INVISIBLE);
-            loadingIndicator.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected List<Movie> doInBackground(URL... urls) {
-
-            URL targetUrl = urls[0];
-
-            List<Movie> movieListResult;
-
-            try {
-                String movieDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
-                movieListResult = JsonUtils.parseMovieDBJson(movieDBResult);
-
-            } catch (IOException | JSONException e) {
-                return null;
+                try {
+                    targetUrl = new URL(args.get(QUERY_URL_KEY).toString());
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                if (movieData != null) {
+                    deliverResult(movieData);
+                }
+                else {
+                    forceLoad();
+                }
             }
 
-            return movieListResult;
-        }
+            @Override
+            public List<Movie> loadInBackground() {
 
-        @Override
-        protected void onPostExecute(List<Movie> movieListResult) {
-            loadingIndicator.setVisibility(View.INVISIBLE);
+                List<Movie> movieListResult;
 
-            if (movieListResult != null){
-                showMovieDataView();
-                movieAdapter.setMovieData(movieListResult);
-                movieList = movieListResult;
+                try {
+                    String movieDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
+                    movieListResult = JsonUtils.parseMovieDBJson(movieDBResult);
+
+                } catch (IOException | JSONException e) {
+                    return null;
+                }
+
+                return movieListResult;
             }
-            else {
-                showErrorMessage();
+
+            public void deliverResult(List<Movie> data) {
+                movieData = data;
+                super.deliverResult(movieData);
             }
+
+        };
+
+//        switch (id){
+//            case ID_FAVORITE_MOVIES_LOADER:
+//                Uri favoriteMoviesQueryUri = MovieContract.MovieEntry.CONTENT_URI;
+//                String sortOrder = MovieContract.MovieEntry.COLUMN_MOVIE_NAME + " ASC";
+//                return new CursorLoader(this,
+//                        favoriteMoviesQueryUri,
+//                        FAVORITE_MOVIES_PROJECTION,
+//                        null,
+//                        null,
+//                        sortOrder);
+//            default:
+//                throw new RuntimeException("Loader Not Implemented: " + id);
+//        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<Movie>> loader, List<Movie> movieListResult) {
+        loadingIndicator.setVisibility(View.INVISIBLE);
+
+        if (movieListResult != null){
+            showMovieDataView();
+            movieAdapter.setMovieData(movieListResult);
+            movieList = movieListResult;
         }
+        else {
+            showErrorMessage();
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<Movie>> loader) {
+
     }
 
     private void showMovieDataView(){
@@ -183,6 +241,24 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         recyclerView.setVisibility(View.INVISIBLE);
         loadingIndicator.setVisibility(View.INVISIBLE);
         errorMessageDisplay.setVisibility(View.VISIBLE);
+    }
+
+    private void getFavoriteMovies(){
+        MovieDbHelper dbHelper = new MovieDbHelper(this);
+        mDb = dbHelper.getWritableDatabase();
+        Cursor cursor = getAllMovies();
+    }
+
+    private Cursor getAllMovies(){
+        return mDb.query(
+                MovieContract.MovieEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
     }
 
 }
