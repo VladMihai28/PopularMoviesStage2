@@ -3,7 +3,9 @@ package com.example.android.popularmovies;
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -44,12 +46,23 @@ public class MovieDetailActivity extends AppCompatActivity
     private TextView movieReleaseDateTextView;
     private TextView movieVoteAverageTextView;
     private TextView movieSynopsisTextView;
+    private Button addToFavoritesButton;
 
 
     private static final int ID_MOVIE_TRAILERS_LOADER = 81;
     private static final int ID_MOVIE_REVIEWS_LOADER = 82;
     private static final String MOVIE_ID_KEY = "movieID";
     private String movieID;
+
+
+    public static final String[] FAVORITE_MOVIES_PROJECTION = {
+            MovieContract.MovieEntry.COLUMN_MOVIE_NAME,
+            MovieContract.MovieEntry.COLUMN_MOVIE_ID,
+    };
+    public String selection;
+    public String[] selectionArgs;
+
+    private boolean movieIsInFavorites;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,6 +75,7 @@ public class MovieDetailActivity extends AppCompatActivity
         movieReleaseDateTextView = findViewById(R.id.tv_detail_release_date);
         movieVoteAverageTextView = findViewById(R.id.tv_detail_vote_average);
         movieSynopsisTextView = findViewById(R.id.tv_detail_plot_synopsis);
+        addToFavoritesButton = findViewById(R.id.b_add_to_favorites);
 
         /* Get the intent that started the Activity */
         Intent intent = getIntent();
@@ -74,21 +88,41 @@ public class MovieDetailActivity extends AppCompatActivity
         if (null != currentMovie){
             int width = Resources.getSystem().getDisplayMetrics().widthPixels;
             int height = Resources.getSystem().getDisplayMetrics().heightPixels;
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+                width = width/2;
+                height = height/2;
+            }
+            else {
+                width = width/3;
+                height = height/2;
+            }
+
             Picasso.with(this)
                     .load(currentMovie.getPosterPath())
-                    .resize(width/2, height/2)
+                    .resize(width, height)
                     .into(moviePoster);
             movieTitleTextView.setText(currentMovie.getTitle());
             movieReleaseDateTextView.setText(currentMovie.getReleaseDate());
             movieVoteAverageTextView.setText(String.valueOf(currentMovie.getVoteAverage()));
             movieSynopsisTextView.setText(currentMovie.getOverview());
             movieID = currentMovie.getId();
-        }
 
-        Bundle bundleForLoader = new Bundle();
-        bundleForLoader.putString(MOVIE_ID_KEY, movieID);
-        getSupportLoaderManager().initLoader(ID_MOVIE_TRAILERS_LOADER, bundleForLoader, trailersLoaderCallback);
-        getSupportLoaderManager().initLoader(ID_MOVIE_REVIEWS_LOADER, bundleForLoader, reviewsLoaderCallback);
+            selection = MovieContract.MovieEntry.COLUMN_MOVIE_ID + " = ? ";
+            selectionArgs = new String[]{movieID};
+            Cursor cursor = getFavoriteMovieById(selection, selectionArgs);
+            if (cursor.getCount() > 0) {
+                movieIsInFavorites = true;
+                markAsFavorite();
+            }
+            else {
+                unmarkAsFavorite();
+            }
+
+            Bundle bundleForLoader = new Bundle();
+            bundleForLoader.putString(MOVIE_ID_KEY, movieID);
+            getSupportLoaderManager().initLoader(ID_MOVIE_TRAILERS_LOADER, bundleForLoader, trailersLoaderCallback);
+            getSupportLoaderManager().initLoader(ID_MOVIE_REVIEWS_LOADER, bundleForLoader, reviewsLoaderCallback);
+        }
 
     }
 
@@ -263,8 +297,21 @@ public class MovieDetailActivity extends AppCompatActivity
     /**
      * Favorite a movie
      */
-    public void addToFavorites(View v){
-        addNewMovie(movieTitleTextView.getText().toString(), movieID);
+    public void updateFavorites(View v){
+        if (movieIsInFavorites){
+            unmarkAsFavorite();
+            removeFavoriteMovie(movieID);
+        } else {
+            markAsFavorite();
+            addNewMovie(movieTitleTextView.getText().toString(), movieID);
+        }
+    }
+
+    private void removeFavoriteMovie(String movieId) {
+        int result = getContentResolver().delete(MovieContract.MovieEntry.CONTENT_URI, selection , selectionArgs);
+        if (result > 0){
+            Toast.makeText(getBaseContext(), "Removed from favorites", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void addNewMovie(String name, String movieId) {
@@ -274,8 +321,30 @@ public class MovieDetailActivity extends AppCompatActivity
         cv.put(MovieContract.MovieEntry.COLUMN_MOVIE_ID, movieId);
         Uri uri = getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, cv);
         if(uri != null) {
-            Toast.makeText(getBaseContext(), uri.toString(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), "Added to favorites", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private Cursor getFavoriteMovieById(String selection, String[] selectionArgs){
+        return getContentResolver().query(
+                MovieContract.MovieEntry.CONTENT_URI,
+                FAVORITE_MOVIES_PROJECTION,
+                selection,
+                selectionArgs,
+                null);
+    }
+
+    private void markAsFavorite(){
+        addToFavoritesButton.setText("Favorite");
+        addToFavoritesButton.setBackgroundColor(Color.parseColor("#FFFF00"));
+        movieIsInFavorites = true;
+    }
+
+    private void unmarkAsFavorite(){
+        addToFavoritesButton.setText("Add To Favorites");
+        addToFavoritesButton.setBackgroundResource(android.R.drawable.btn_default);
+        movieIsInFavorites = false;
+    }
+
 
 }

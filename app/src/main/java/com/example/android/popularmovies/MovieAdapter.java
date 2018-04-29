@@ -1,6 +1,7 @@
 package com.example.android.popularmovies;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -23,9 +24,11 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     private List<Movie> movieList;
 
     private final MovieAdapterOnClickHandler clickHandler;
+    private Context context;
 
-    public MovieAdapter (MovieAdapterOnClickHandler clickHandler){
+    public MovieAdapter (Context context, MovieAdapterOnClickHandler clickHandler){
         this.clickHandler= clickHandler;
+        this.context = context;
     }
 
     /**
@@ -71,9 +74,17 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
         Movie currentMovie = movieList.get(position);
         int width = Resources.getSystem().getDisplayMetrics().widthPixels;
         int height = Resources.getSystem().getDisplayMetrics().heightPixels;
+        if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+            width = width/2;
+            height = height/2;
+        }
+        else {
+            width = width/3;
+        }
+
         Picasso.with(holder.movieThumbnail.getContext())
                 .load(currentMovie.getPosterPath())
-                .resize(width/2, height/2)
+                .resize(width, height)
                 .into(holder.movieThumbnail);
     }
 

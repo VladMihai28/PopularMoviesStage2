@@ -3,6 +3,7 @@ package com.example.android.popularmovies;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.app.LoaderManager;
@@ -57,9 +58,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private List<Movie> movieList;
 
-    private final int NUMBER_OF_COLUMNS_IN_GRID = 2;
-
-    private SQLiteDatabase mDb;
+    private int NUMBER_OF_COLUMNS_IN_GRID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +68,12 @@ public class MainActivity extends AppCompatActivity implements
         loadingIndicator = findViewById(R.id.pb_loading_indicator);
         errorMessageDisplay = findViewById(R.id.tv_error_message_display);
 
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
+            NUMBER_OF_COLUMNS_IN_GRID = 2;
+        }
+        else {
+            NUMBER_OF_COLUMNS_IN_GRID = 3;
+        }
         GridLayoutManager layoutManager = new GridLayoutManager(this, NUMBER_OF_COLUMNS_IN_GRID);
 
 
@@ -76,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setHasFixedSize(true);
 
-        movieAdapter = new MovieAdapter(this);
+        movieAdapter = new MovieAdapter(this, this);
         recyclerView.setAdapter(movieAdapter);
 
         /* If we return to the main activity display movies based on the sorting category last chosen
