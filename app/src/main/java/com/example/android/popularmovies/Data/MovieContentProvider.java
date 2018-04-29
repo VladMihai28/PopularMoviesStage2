@@ -17,7 +17,6 @@ import static com.example.android.popularmovies.Data.MovieContract.MovieEntry.TA
  */
 
 public class MovieContentProvider extends ContentProvider {
-
     private MovieDbHelper movieDbHelper;
     public static final int MOVIES = 100;
     public static final int MOVIE_WITH_ID = 101;

@@ -1,14 +1,12 @@
 package com.example.android.popularmovies;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,7 +19,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.android.popularmovies.Data.MovieContract;
-import com.example.android.popularmovies.Data.MovieDbHelper;
 import com.example.android.popularmovies.Model.Movie;
 import com.example.android.popularmovies.utils.JsonUtils;
 import com.example.android.popularmovies.utils.NetworkUtils;
@@ -35,18 +32,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements
-        MovieAdapter.MovieAdapterOnClickHandler,
-        LoaderManager.LoaderCallbacks<List<Movie>>{
+        MovieAdapter.MovieAdapterOnClickHandler{
 
     private MovieAdapter movieAdapter;
 
-    private static final int ID_FAVORITE_MOVIES_LOADER = 74;
-    LoaderManager.LoaderCallbacks<List<Movie>> callback;
+    private static final int ID_MOVIES_QUERY_LOADER = 74;
+    private static final int ID_FAVORITE_MOVIES_LOADER = 75;
 
     public static final String[] FAVORITE_MOVIES_PROJECTION = {
             MovieContract.MovieEntry.COLUMN_MOVIE_NAME,
             MovieContract.MovieEntry.COLUMN_MOVIE_ID,
     };
+
+    private final static int INDEX_MOVIE_ID = 1;
 
     private final static String QUERY_URL_KEY = "uriForQuery";
 
@@ -84,13 +82,11 @@ public class MainActivity extends AppCompatActivity implements
         /* If we return to the main activity display movies based on the sorting category last chosen
          * If not, display movies by popularity
          */
-        callback = MainActivity.this;
-
         if(savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.outStateMovieParcelableKey))) {
             URL popularMoviesQuery = NetworkUtils.buildUrlForPopularMovies();
             Bundle bundleForLoader = new Bundle();
             bundleForLoader.putString(QUERY_URL_KEY, popularMoviesQuery.toString());
-            getSupportLoaderManager().initLoader(ID_FAVORITE_MOVIES_LOADER, bundleForLoader, callback);
+            getSupportLoaderManager().initLoader(ID_MOVIES_QUERY_LOADER, bundleForLoader, moviesLoaderCallback);
         }
         else {
             movieList = savedInstanceState.getParcelableArrayList(getString(R.string.outStateMovieParcelableKey));
@@ -123,17 +119,17 @@ public class MainActivity extends AppCompatActivity implements
                 URL moviesQuery = NetworkUtils.buildUrlForPopularMovies();
                 Bundle bundleForLoader = new Bundle();
                 bundleForLoader.putString(QUERY_URL_KEY, moviesQuery.toString());
-                getSupportLoaderManager().restartLoader(ID_FAVORITE_MOVIES_LOADER, bundleForLoader, callback);
+                getSupportLoaderManager().restartLoader(ID_MOVIES_QUERY_LOADER, bundleForLoader, moviesLoaderCallback);
                 break;
             }
             case R.id.topRated:
                 URL moviesQuery = NetworkUtils.buildUrlForTopRatedMovies();
                 Bundle bundleForLoader = new Bundle();
                 bundleForLoader.putString(QUERY_URL_KEY, moviesQuery.toString());
-                getSupportLoaderManager().restartLoader(ID_FAVORITE_MOVIES_LOADER, bundleForLoader, callback);
+                getSupportLoaderManager().restartLoader(ID_MOVIES_QUERY_LOADER, bundleForLoader, moviesLoaderCallback);
                 break;
             case R.id.favorites:
-                getFavoriteMovies();
+                getSupportLoaderManager().initLoader(ID_FAVORITE_MOVIES_LOADER, null, favoriteMoviesLoaderCallback);
         }
 
         return super.onOptionsItemSelected(item);
@@ -154,83 +150,139 @@ public class MainActivity extends AppCompatActivity implements
         startActivity(intentToStartDetailActivity);
     }
 
-    @Override
-    public Loader<List<Movie>> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<List<Movie>>(this) {
-            List<Movie> movieData = null;
-            URL targetUrl = null;
-            @Override
-            protected void onStartLoading() {
+    private LoaderManager.LoaderCallbacks<List<Movie>> moviesLoaderCallback = new LoaderManager.LoaderCallbacks<List<Movie>>() {
+        @SuppressLint("StaticFieldLeak")
+        @Override
+        public Loader<List<Movie>> onCreateLoader(int id, final Bundle args) {
+            return new AsyncTaskLoader<List<Movie>>(MainActivity.this) {
+                List<Movie> movieData = null;
+                URL targetUrl = null;
 
-                try {
-                    targetUrl = new URL(args.get(QUERY_URL_KEY).toString());
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
-                if (movieData != null) {
-                    deliverResult(movieData);
-                }
-                else {
-                    forceLoad();
-                }
-            }
+                @Override
+                protected void onStartLoading() {
 
-            @Override
-            public List<Movie> loadInBackground() {
-
-                List<Movie> movieListResult;
-
-                try {
-                    String movieDBResult =  NetworkUtils.getResponseFromHttpUrl(targetUrl);
-                    movieListResult = JsonUtils.parseMovieDBJson(movieDBResult);
-
-                } catch (IOException | JSONException e) {
-                    return null;
+                    try {
+                        targetUrl = new URL(args.get(QUERY_URL_KEY).toString());
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                    if (movieData != null) {
+                        deliverResult(movieData);
+                    } else {
+                        forceLoad();
+                    }
                 }
 
-                return movieListResult;
-            }
+                @Override
+                public List<Movie> loadInBackground() {
 
-            public void deliverResult(List<Movie> data) {
-                movieData = data;
-                super.deliverResult(movieData);
-            }
+                    List<Movie> movieListResult;
 
-        };
+                    try {
+                        String movieDBResult = NetworkUtils.getResponseFromHttpUrl(targetUrl);
+                        movieListResult = JsonUtils.parseMovieDBJson(movieDBResult);
 
-//        switch (id){
-//            case ID_FAVORITE_MOVIES_LOADER:
-//                Uri favoriteMoviesQueryUri = MovieContract.MovieEntry.CONTENT_URI;
-//                String sortOrder = MovieContract.MovieEntry.COLUMN_MOVIE_NAME + " ASC";
-//                return new CursorLoader(this,
-//                        favoriteMoviesQueryUri,
-//                        FAVORITE_MOVIES_PROJECTION,
-//                        null,
-//                        null,
-//                        sortOrder);
-//            default:
-//                throw new RuntimeException("Loader Not Implemented: " + id);
-//        }
-    }
+                    } catch (IOException | JSONException e) {
+                        return null;
+                    }
 
-    @Override
-    public void onLoadFinished(Loader<List<Movie>> loader, List<Movie> movieListResult) {
-        loadingIndicator.setVisibility(View.INVISIBLE);
+                    return movieListResult;
+                }
 
-        if (movieListResult != null){
-            showMovieDataView();
-            movieAdapter.setMovieData(movieListResult);
-            movieList = movieListResult;
+                public void deliverResult(List<Movie> data) {
+                    movieData = data;
+                    super.deliverResult(movieData);
+                }
+
+            };
         }
-        else {
-            showErrorMessage();
+
+        @Override
+        public void onLoadFinished(Loader<List<Movie>> loader, List<Movie> movieListResult) {
+            loadingIndicator.setVisibility(View.INVISIBLE);
+
+            if (movieListResult != null) {
+                showMovieDataView();
+                movieAdapter.setMovieData(movieListResult);
+                movieList = movieListResult;
+            } else {
+                showErrorMessage();
+            }
         }
-    }
 
-    @Override
-    public void onLoaderReset(Loader<List<Movie>> loader) {
+        @Override
+        public void onLoaderReset(Loader<List<Movie>> loader) {
 
-    }
+        }
+    };
+
+    private LoaderManager.LoaderCallbacks<List<Movie>> favoriteMoviesLoaderCallback = new LoaderManager.LoaderCallbacks<List<Movie>>() {
+        @SuppressLint("StaticFieldLeak")
+        @Override
+        public Loader<List<Movie>> onCreateLoader(int id, final Bundle args) {
+            return new AsyncTaskLoader<List<Movie>>(MainActivity.this) {
+                List<Movie> movieData = null;
+
+                @Override
+                protected void onStartLoading() {
+
+                    if (movieData != null) {
+                        deliverResult(movieData);
+                    } else {
+                        forceLoad();
+                    }
+                }
+
+                @Override
+                public List<Movie> loadInBackground() {
+
+                    List<Movie> movieListResult = new ArrayList<>();
+                    Cursor favoriteMoviesCursor = getFavoriteMovies();
+                    try {
+                        while (favoriteMoviesCursor.moveToNext()) {
+                            String movieId = favoriteMoviesCursor.getString(INDEX_MOVIE_ID);
+
+                            try {
+                                String movieDBResult = NetworkUtils.getResponseFromHttpUrl(NetworkUtils.buildUrlForMoviesDetail(movieId));
+                                movieListResult.add(JsonUtils.parseSingleMovieDBJson(movieDBResult));
+
+                            } catch (IOException | JSONException e) {
+                                return null;
+                            }
+                        }
+                    } finally {
+                        favoriteMoviesCursor.close();
+                    }
+                    return movieListResult;
+                }
+
+                public void deliverResult(List<Movie> data) {
+                    movieData = data;
+                    super.deliverResult(movieData);
+                }
+
+            };
+
+        }
+
+        @Override
+        public void onLoadFinished(Loader<List<Movie>> loader, List<Movie> movieListResult) {
+            loadingIndicator.setVisibility(View.INVISIBLE);
+
+            if (movieListResult != null) {
+                showMovieDataView();
+                movieAdapter.setMovieData(movieListResult);
+                movieList = movieListResult;
+            } else {
+                showErrorMessage();
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<List<Movie>> loader) {
+
+        }
+    };
 
     private void showMovieDataView(){
         errorMessageDisplay.setVisibility(View.INVISIBLE);
@@ -243,22 +295,13 @@ public class MainActivity extends AppCompatActivity implements
         errorMessageDisplay.setVisibility(View.VISIBLE);
     }
 
-    private void getFavoriteMovies(){
-        MovieDbHelper dbHelper = new MovieDbHelper(this);
-        mDb = dbHelper.getWritableDatabase();
-        Cursor cursor = getAllMovies();
-    }
-
-    private Cursor getAllMovies(){
-        return mDb.query(
-                MovieContract.MovieEntry.TABLE_NAME,
-                null,
-                null,
-                null,
+    private Cursor getFavoriteMovies(){
+        return getContentResolver().query(
+                MovieContract.MovieEntry.CONTENT_URI,
+                FAVORITE_MOVIES_PROJECTION,
                 null,
                 null,
                 null);
-
     }
 
 }

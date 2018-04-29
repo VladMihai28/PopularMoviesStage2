@@ -1,11 +1,11 @@
 package com.example.android.popularmovies;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -94,6 +94,7 @@ public class MovieDetailActivity extends AppCompatActivity
 
     private LoaderManager.LoaderCallbacks<List<Trailer>> trailersLoaderCallback = new LoaderManager.LoaderCallbacks<List<Trailer>>(){
 
+        @SuppressLint("StaticFieldLeak")
         @Override
         public Loader<List<Trailer>> onCreateLoader(int id, Bundle args) {
             return new AsyncTaskLoader<List<Trailer>>(MovieDetailActivity.this) {
@@ -152,6 +153,7 @@ public class MovieDetailActivity extends AppCompatActivity
 
     private LoaderManager.LoaderCallbacks<List<Review>> reviewsLoaderCallback = new LoaderManager.LoaderCallbacks<List<Review>>(){
 
+        @SuppressLint("StaticFieldLeak")
         @Override
         public Loader<List<Review>> onCreateLoader(int id, Bundle args) {
             return new AsyncTaskLoader<List<Review>>(MovieDetailActivity.this) {
@@ -234,8 +236,6 @@ public class MovieDetailActivity extends AppCompatActivity
         }
 
     }
-
-
 
     private void createReviewTextBoxes(List<Review> movieReviewListResult){
         LinearLayout layout = findViewById(R.id.ll_reviews);

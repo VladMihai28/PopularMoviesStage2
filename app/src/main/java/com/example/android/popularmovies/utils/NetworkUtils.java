@@ -97,6 +97,26 @@ public class NetworkUtils {
     }
 
     /**
+     * Build URL for requesting information from a single movie
+     * @param id the id of the movie we are requesting information for
+     * @return the URL to use to query for the movie
+     */
+    public static URL buildUrlForMoviesDetail(String id){
+        URL url = null;
+        Uri builtUri = Uri.parse(POPULAR_MOVIES_BASE_URL + PARAM_MOVIE + "/" + id).buildUpon()
+                .appendQueryParameter(API_KEY, API_KEY_VALUE)
+                .build();
+        try {
+            url = new URL(builtUri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return url;
+
+    }
+
+    /**
      * Build URL for requesting review information
      * @param id the id of the movie we are requesting reviews for
      * @return the URL to use to query for reviews

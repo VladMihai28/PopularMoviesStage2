@@ -73,6 +73,51 @@ public class JsonUtils {
         return movieList;
     }
 
+    public static Movie parseSingleMovieDBJson(String json) throws JSONException {
+
+        /* The name of the relevant fields from the JSON */
+        final String VOTE_AVERAGE = "vote_average";
+        final String TITLE = "title";
+        final String POSTER_PATH = "poster_path";
+        final String OVERVIEW = "overview";
+        final String RELEASE_DATE = "release_date";
+        final String ID = "id";
+
+        final String BASE_POSTER_PATH = "http://image.tmdb.org/t/p/w185";
+
+        /* Parse JSON */
+
+        JSONObject currentMovieJson = new JSONObject(json);
+        Movie currentMovie = new Movie();
+
+        if (currentMovieJson.has(VOTE_AVERAGE)) {
+            currentMovie.setVoteAverage(Float.parseFloat(currentMovieJson.getString(VOTE_AVERAGE)));
+        }
+
+        if (currentMovieJson.has(ID)) {
+            currentMovie.setId(currentMovieJson.getString(ID));
+        }
+        if (currentMovieJson.has(TITLE)) {
+            currentMovie.setTitle(currentMovieJson.getString(TITLE));
+        }
+        if (currentMovieJson.has(POSTER_PATH)) {
+            String posterPath = BASE_POSTER_PATH + currentMovieJson.getString(POSTER_PATH);
+            currentMovie.setPosterPath(posterPath);
+        }
+        if (currentMovieJson.has(OVERVIEW)) {
+            currentMovie.setOverview(currentMovieJson.getString(OVERVIEW));
+        }
+        if (currentMovieJson.has(RELEASE_DATE)) {
+            currentMovie.setReleaseDate(currentMovieJson.getString(RELEASE_DATE));
+        }
+
+        if (!currentMovie.getTitle().isEmpty() && !currentMovie.getPosterPath().isEmpty()) {
+            return currentMovie;
+        }
+        return null;
+    }
+
+
     public static List<Trailer> parseMovieTrailerDBJson(String json) throws JSONException {
 
         /* The name of the relevant fields from the JSON */
