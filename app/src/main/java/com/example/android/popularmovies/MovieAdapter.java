@@ -72,19 +72,9 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     public void onBindViewHolder(MovieAdapterViewHolder holder, int position) {
 
         Movie currentMovie = movieList.get(position);
-        int width = Resources.getSystem().getDisplayMetrics().widthPixels;
-        int height = Resources.getSystem().getDisplayMetrics().heightPixels;
-        if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT){
-            width = width/2;
-            height = height/2;
-        }
-        else {
-            width = width/3;
-        }
 
         Picasso.with(holder.movieThumbnail.getContext())
                 .load(currentMovie.getPosterPath())
-                .resize(width, height)
                 .into(holder.movieThumbnail);
     }
 
