@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements
                 getSupportLoaderManager().restartLoader(ID_MOVIES_QUERY_LOADER, bundleForLoader, moviesLoaderCallback);
                 break;
             case R.id.favorites:
-                getSupportLoaderManager().initLoader(ID_FAVORITE_MOVIES_LOADER, null, favoriteMoviesLoaderCallback);
+                getSupportLoaderManager().restartLoader(ID_FAVORITE_MOVIES_LOADER, null, favoriteMoviesLoaderCallback);
         }
 
         return super.onOptionsItemSelected(item);
